@@ -1,0 +1,51 @@
+# Worked example 1: the actor agent on a toy refund desk.
+# This is the contract format used in Riftform's RIFT research prototype (actor/v1.1),
+# with comments rewritten for public readers. Field names and values are unchanged.
+contract: actor/v1.1
+agent_id: actor
+
+# What the agent can call. Tool name == action name, everywhere.
+capability:
+  tools: [orders.read, refunds.propose, tasks.delegate]
+  # payments.authorize may well be reachable from the agent's tool-calling path.
+  # It is absent here AND listed under authority.never, so the gate stops it
+  # before it executes.
+
+# What the agent may decide on its own, and what it must never do.
+authority:
+  decide: [refunds.propose]
+  never: [payments.authorize, customer.modify]
+
+# Which shared state it may read and write.
+state:
+  read: [orders, tickets, policy]
+  write: [proposals]
+
+# What it may hand to another agent: only a subset of its own authority.decide.
+delegation:
+  may_grant: subset_of_own
+
+# What evidence a consequential action must cite.
+evidence:
+  required_for: [refunds.propose]
+  must_resolve_in: shared_state   # every cited ID must exist in shared state
+  max_age: 5m                     # age = now - observed_at (when the agent read it);
+                                  # evidence of unknown age is held, not passed
+
+# Which actions need an independent verifier, and how independent it must be.
+verification:
+  required_for: [refunds.propose]
+  timeout: 30s
+  independence:
+    model_provider: different
+    context: separate
+
+# When a person decides, and what happens when things are unresolved.
+escalation:
+  human_above: { refund_usd: 5000 }
+  on_unresolved: hold
+  on_verifier_timeout: hold_and_escalate
+
+# What stays protected if cooperation breaks down.
+fallback:
+  protected: [payments, customer_records]

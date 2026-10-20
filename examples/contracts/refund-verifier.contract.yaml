@@ -1,0 +1,31 @@
+# Worked example 2: the independent verifier for the refund desk.
+# Same contract format as the actor (verifier/v0 in the RIFT research prototype),
+# with comments rewritten for public readers. Field names and values are unchanged.
+contract: verifier/v0
+agent_id: verifier
+
+capability:
+  tools: [orders.read, tickets.read, policy.read]   # reads only, retrieved independently
+
+authority:
+  decide: [verdict.confirm, verdict.reject]
+  never: [refunds.propose, payments.authorize, customer.modify]
+
+state:
+  read: [orders, tickets, policy]   # its own live read, never the actor's snapshot
+  write: [verdicts]
+
+delegation:
+  may_grant: none
+
+evidence:
+  verdict_must_cite: [state_reads]   # a verdict lists what it read and when
+
+verification:
+  required_for: []                   # the verifier itself is not verified in this example
+
+escalation:
+  on_disagreement_with_actor: hold
+
+fallback:
+  protected: [payments, customer_records]

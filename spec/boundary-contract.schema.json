@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riftform:rift-gate:boundary-contract:v0",
+  "title": "Boundary contract (v0)",
+  "description": "What one agent may do, decide, read, write and delegate; what evidence an action needs; which actions need independent verification; when a person decides; what stays protected. See boundary-contract.md.",
+  "type": "object",
+  "required": ["contract", "agent_id", "capability", "authority"],
+  "properties": {
+    "contract": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*/v\\d+(\\.\\d+)?$",
+      "description": "Contract identifier and version, e.g. actor/v1.1. Cited in every stop or hold."
+    },
+    "agent_id": { "type": "string", "minLength": 1 },
+    "capability": {
+      "type": "object",
+      "properties": {
+        "tools": { "type": "array", "items": { "type": "string" }, "description": "Every tool the agent may call. Anything else is stopped." }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "properties": {
+        "decide": { "type": "array", "items": { "type": "string" }, "description": "Actions the agent may decide on its own." },
+        "never": { "type": "array", "items": { "type": "string" }, "description": "Actions stopped even if reachable or listed in capability.tools." }
+      }
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "read": { "type": "array", "items": { "type": "string" } },
+        "write": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "delegation": {
+      "type": "object",
+      "properties": {
+        "may_grant": { "enum": ["subset_of_own", "none"] }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "required_for": { "type": "array", "items": { "type": "string" } },
+        "must_resolve_in": { "enum": ["shared_state"] },
+        "max_age": { "type": "string", "pattern": "^\\d+[smh]$", "description": "Maximum age of cited evidence. Unknown age is held." },
+        "verdict_must_cite": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "required_for": { "type": "array", "items": { "type": "string" } },
+        "timeout": { "type": "string", "pattern": "^\\d+[smh]$" },
+        "independence": {
+          "type": "object",
+          "description": "Axes on which the verifier must differ from the actor.",
+          "properties": {
+            "model_provider": { "enum": ["different", "same"] },
+            "context": { "enum": ["separate", "shared"] },
+            "evidence_retrieval": { "enum": ["independent", "shared"] },
+            "state_snapshot": { "enum": ["independent", "shared"] },
+            "verification_policy": { "enum": ["independent", "shared"] }
+          }
+        }
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "properties": {
+        "human_above": { "type": "object", "additionalProperties": { "type": "number" } },
+        "on_unresolved": { "enum": ["hold"] },
+        "on_verifier_timeout": { "enum": ["hold", "hold_and_escalate"] },
+        "on_disagreement_with_actor": { "enum": ["hold"] }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "properties": {
+        "protected": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

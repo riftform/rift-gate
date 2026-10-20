@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:riftform:rift-gate:trace-event:v0",
+  "title": "rift-gate trace event",
+  "description": "One object per line of trace.jsonl, in seq order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ts",
+    "run_id",
+    "seq",
+    "agent",
+    "event",
+    "gate",
+    "decision",
+    "contract_ref",
+    "detail",
+    "latency_ms"
+  ],
+  "properties": {
+    "ts": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "agent": {
+      "enum": [
+        "actor",
+        "verifier",
+        "harness",
+        "helper",
+        "human"
+      ]
+    },
+    "event": {
+      "enum": [
+        "action_submitted",
+        "gate_check",
+        "tool_call",
+        "tool_result",
+        "state_read",
+        "verdict",
+        "escalation",
+        "hold",
+        "error"
+      ]
+    },
+    "gate": {
+      "enum": [
+        "boundary",
+        "evidence",
+        "verification",
+        "escalation",
+        null
+      ]
+    },
+    "decision": {
+      "enum": [
+        "pass",
+        "stop",
+        "hold",
+        null
+      ]
+    },
+    "contract_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^(actor|verifier)/v\\d+(\\.\\d+)?#[a-z_]+(\\.[a-z_]+)*$"
+    },
+    "detail": {
+      "type": "object"
+    },
+    "latency_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "gate_check"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "gate": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "A gate check must name its gate and its decision."
+    },
+    {
+      "if": {
+        "properties": {
+          "event": {
+            "const": "gate_check"
+          },
+          "decision": {
+            "enum": [
+              "stop",
+              "hold"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "contract_ref": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "A stop or hold must cite the contract line responsible."
+    }
+  ]
+}
