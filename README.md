@@ -153,3 +153,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE). Copyright 2026 Riftform LLC.
+
+## Technical notes
+
+- [Technical Note 001: Fail closed when you can't tell how old the evidence is](docs/technical-notes/001-evidence-freshness-fail-closed.md)
