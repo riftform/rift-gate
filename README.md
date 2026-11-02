@@ -4,6 +4,25 @@
 
 rift-gate is a minimal reference implementation of a pre-execution gate for tool-using AI agents. Each agent gets a short, machine-readable **boundary contract**: what it may do, what it may hand to others, what evidence an action needs, and when a person decides. rift-gate checks every proposed tool call against that contract **before the tool executes**, and every stop or hold names the contract line responsible.
 
+## Known limitations of rift-gate 0.1
+
+**Affected:** rift-gate 0.1.0 (tag `v0.1.0`, 25 October 2026) and the current `main` branch, which has the same gate code.
+
+**rift-gate 0.1.0 should not be relied on as a production security enforcement boundary.** It is a research reference implementation. Internal testing in late October 2026 found cases where 0.1.0 allows a call that its contract says should be stopped or held:
+
+- **Evidence freshness.** Some timestamps that do not establish a reliable evidence age are accepted as fresh, so `evidence.max_age` is not always enforced.
+- **Human escalation.** Some missing, malformed or inconsistent amount inputs cause `escalation.human_above` not to be applied, so an action above the threshold can proceed without a person.
+- **Contract validation.** `check()` does not validate the contract it is given. Some malformed contracts may be interpreted permissively. Others cause `check()` to raise an exception rather than return a hold. Callers must not treat an exception as authorization.
+- **Delegation.** The `delegation.may_grant: none` restriction is not reliably enforced by v0.1.0. Delegation restrictions must not be relied upon as an independent security boundary.
+
+Two statements in the 0.1 documentation are therefore not accurate for 0.1.0: that errors inside the gate always hold, and (in Technical Note 001) that malformed input always holds.
+
+**Execution authority must stay outside the agent.** A rift-gate decision is advisory. A call is prevented only when the process that holds the tool credentials invokes the tool solely after the gate allows it. The agent must never hold those credentials or have any other path to the tool.
+
+A corrected version is being tested. It has not been released, and this notice will be updated when it is.
+
+Please report issues privately through **Report a vulnerability** on this repository's Security tab.
+
 ## The problem
 
 Rules about what an agent may do often live in prompts or application logic rather than in an independently enforceable boundary. A hidden instruction on a web page, or a confused model, can talk an agent past them, and the owner finds out afterwards from a log, if at all. rift-gate puts the rules in a contract that is checked outside the model.
@@ -100,7 +119,7 @@ d.contract_ref   # "actor/v1.1#authority.never"
 | Missing or unknown evidence IDs | `evidence.required_for`, `evidence.must_resolve_in` | stop |
 | Amount above a human threshold | `escalation.human_above` | hold |
 | Action needs an independent verifier | `verification.required_for` | allowed, with `needs_verification = True` |
-| Any error inside the gate | `escalation.on_unresolved` | hold |
+| An error inside a check (see Known limitations: some malformed contracts raise instead) | `escalation.on_unresolved` | hold |
 
 Your code calls the tool only when `d.allowed` is true and any required verification has confirmed. rift-gate does not run tools or verifiers itself.
 
@@ -143,7 +162,7 @@ Proposed work, not yet funded or built: contract format v1 with examples beyond 
 
 - The prototype's deliberately weakened test variants are not included; only the full-control logic is.
 - Evidence IDs resolve against any top-level collection in the state you pass in, not a fixed list.
-- Malformed durations are rejected when a contract loads, and errors inside the gate hold rather than raise.
+- Malformed durations are rejected when a contract loads. Errors inside a check hold rather than raise, but `check()` does not validate contracts itself and some malformed contracts raise (see Known limitations).
 - Timestamps without a timezone count as unknown age.
 
 ## Contributing and security

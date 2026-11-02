@@ -1,5 +1,7 @@
 # Technical Note 001: Fail closed when you can't tell how old the evidence is
 
+> **Correction (November 2026).** Later testing found that rift-gate 0.1.0 does not hold in every case this note describes. Some timestamps that do not establish a reliable evidence age are accepted as fresh, and some malformed contracts make the gate raise instead of hold. The unknown-age cases this note documents (missing, empty, unparseable, no timezone) do hold as described. See [Known limitations of rift-gate 0.1](../../README.md#known-limitations-of-rift-gate-01).
+
 *Riftform · Version 1.0 · 25 October 2026 · Applies to rift-gate 0.1 (release v0.1.0, commit `6d9fae7`)*
 
 ## Abstract
